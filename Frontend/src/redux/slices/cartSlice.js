@@ -21,8 +21,12 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
+    replaceCart: (state, action) => {
+      state.items = action.payload;
+      localStorage.setItem('cart', JSON.stringify(state.items));
+    },
     addToCart: (state, action) => {
-      const existingItem = state.items.find((item) => item.id === action.payload.id);
+      const existingItem = state.items.find((item) => String(item.id) === String(action.payload.id));
       if (existingItem) {
         existingItem.quantity += 1;
       } else {
@@ -31,25 +35,25 @@ const cartSlice = createSlice({
       localStorage.setItem('cart', JSON.stringify(state.items));
     },
     increaseQuantity: (state, action) => {
-      const item = state.items.find((i) => i.id === action.payload);
+      const item = state.items.find((i) => String(i.id) === String(action.payload));
       if (item) item.quantity += 1;
       localStorage.setItem('cart', JSON.stringify(state.items));
     },
     decreaseQuantity: (state, action) => {
-      const item = state.items.find((i) => i.id === action.payload);
+      const item = state.items.find((i) => String(i.id) === String(action.payload));
       if (item && item.quantity > 1) {
         item.quantity -= 1;
       } else {
-        state.items = state.items.filter((i) => i.id !== action.payload);
+        state.items = state.items.filter((i) => String(i.id) !== String(action.payload));
       }
       localStorage.setItem('cart', JSON.stringify(state.items));
     },
     removeFromCart: (state, action) => {
-      state.items = state.items.filter((item) => item.id !== action.payload);
+      state.items = state.items.filter((item) => String(item.id) !== String(action.payload));
       localStorage.setItem('cart', JSON.stringify(state.items));
     },
   },
 });
 
-export const { addToCart, increaseQuantity, decreaseQuantity, removeFromCart } = cartSlice.actions;
+export const { replaceCart, addToCart, increaseQuantity, decreaseQuantity, removeFromCart } = cartSlice.actions;
 export default cartSlice.reducer;

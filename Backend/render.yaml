@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: shophub-api
+    runtime: node
+    rootDir: Backend
+    buildCommand: npm ci
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false

@@ -1,10 +1,35 @@
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { removeFromWishlist } from '../redux/slices/wishlistSlice';
+import { replaceWishlist, removeFromWishlist } from '../redux/slices/wishlistSlice';
+import { getFavorites, removeProductFromFavorites } from '../services/productApi';
 
 function Wishlist() {
   const dispatch = useDispatch();
+  const [notice, setNotice] = useState('');
   const items = useSelector((state) => state.wishlist.items);
+
+  useEffect(() => {
+    let active = true;
+    getFavorites()
+      .then((favorites) => {
+        if (active) dispatch(replaceWishlist(favorites));
+      })
+      .catch((error) => {
+        if (active) setNotice(`Unable to sync favorites: ${error.message}`);
+      });
+    return () => { active = false; };
+  }, [dispatch]);
+
+  const removeFavorite = async (productId) => {
+    try {
+      await removeProductFromFavorites(productId);
+      dispatch(removeFromWishlist(productId));
+      setNotice('');
+    } catch (error) {
+      setNotice(`Unable to remove favorite: ${error.message}`);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -13,6 +38,7 @@ function Wishlist() {
         <p className="text-gray-600">Save products you love and come back when you are ready to buy.</p>
       </div>
 
+      {notice && <p className="mb-4 text-sm text-red-600" role="alert">{notice}</p>}
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="mb-4 text-4xl">💝</div>
@@ -32,7 +58,7 @@ function Wishlist() {
                   <Link to={`/product/${item.id}`} className="font-semibold text-gray-900 no-underline">{item.title}</Link>
                   <p className="text-blue-600">${item.price}</p>
                 </div>
-                <button type="button" onClick={() => dispatch(removeFromWishlist(item.id))} className="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">
+                <button type="button" onClick={() => removeFavorite(item.id)} className="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">
                   Remove
                 </button>
               </div>

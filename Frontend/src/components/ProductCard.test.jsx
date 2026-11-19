@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
+import { vi } from 'vitest';
 import ProductCard from './ProductCard';
 import cartReducer from '../redux/slices/cartSlice';
 import wishlistReducer from '../redux/slices/wishlistSlice';
@@ -48,10 +49,21 @@ describe('ProductCard', () => {
 
   it('adds the product to cart when clicked', async () => {
     const user = userEvent.setup();
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({ success: true }),
+    })));
     renderWithStore(product);
 
     await user.click(screen.getByRole('button', { name: /add to cart/i }));
 
     expect(screen.getByRole('button', { name: /add to cart/i })).toBeInTheDocument();
+    expect(await screen.findByRole('status')).toHaveTextContent(/added to cart/i);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/cart$/),
+      expect.objectContaining({ method: 'POST' }),
+    );
+    vi.unstubAllGlobals();
   });
 });

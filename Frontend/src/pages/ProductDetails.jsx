@@ -1,15 +1,19 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../redux/slices/cartSlice';
 import { addToWishlist, removeFromWishlist } from '../redux/slices/wishlistSlice';
+import { addProductToCart, addProductToFavorites, removeProductFromFavorites } from '../services/productApi';
 
 function Product() {
   const dispatch = useDispatch();
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
   const { id } = useParams();
   const product = useSelector((state) => state.products.items.find((item) => item.id === Number(id)));
   const wishlistItems = useSelector((state) => state.wishlist.items);
-  const isWishlisted = wishlistItems.some((item) => item.id === Number(id));
+  const isWishlisted = wishlistItems.some((item) => String(item.id) === id);
 
   if (!product) {
     return (
@@ -20,6 +24,38 @@ function Product() {
       </div>
     );
   }
+
+  const handleAddToCart = async () => {
+    setBusy(true);
+    try {
+      await addProductToCart(product);
+      dispatch(addToCart(product));
+      setNotice('Product added to cart.');
+    } catch (error) {
+      setNotice(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleWishlist = async () => {
+    setBusy(true);
+    try {
+      if (isWishlisted) {
+        await removeProductFromFavorites(product.id);
+        dispatch(removeFromWishlist(product.id));
+        setNotice('Product removed from favorites.');
+      } else {
+        await addProductToFavorites(product);
+        dispatch(addToWishlist(product));
+        setNotice('Product added to favorites.');
+      }
+    } catch (error) {
+      setNotice(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -35,13 +71,14 @@ function Product() {
           <p className="mb-6 leading-7 text-gray-600">{product.description}</p>
 
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => dispatch(addToCart(product))} className="rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white">
+            <button type="button" onClick={handleAddToCart} disabled={busy} className="rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white disabled:opacity-60">
               Add to Cart
             </button>
-            <button type="button" onClick={() => dispatch(isWishlisted ? removeFromWishlist(product.id) : addToWishlist(product))} className={`rounded-lg border px-4 py-3 font-semibold ${isWishlisted ? 'border-red-200 bg-red-50 text-red-600' : 'border-gray-300 bg-white text-gray-900'}`}>
+            <button type="button" onClick={handleWishlist} disabled={busy} className={`rounded-lg border px-4 py-3 font-semibold disabled:opacity-60 ${isWishlisted ? 'border-red-200 bg-red-50 text-red-600' : 'border-gray-300 bg-white text-gray-900'}`}>
               {isWishlisted ? 'Wishlisted' : 'Wishlist'}
             </button>
           </div>
+          {notice && <p className="mt-4 text-sm text-gray-600" role="status">{notice}</p>}
         </div>
       </div>
     </div>

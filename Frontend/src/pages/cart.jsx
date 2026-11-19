@@ -1,10 +1,51 @@
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { increaseQuantity, decreaseQuantity, removeFromCart } from '../redux/slices/cartSlice';
+import { replaceCart, increaseQuantity, decreaseQuantity, removeFromCart } from '../redux/slices/cartSlice';
+import { getCart, removeProductFromCart, updateCartQuantity } from '../services/productApi';
 
 function Cart() {
   const dispatch = useDispatch();
+  const [notice, setNotice] = useState('');
   const items = useSelector((state) => state.cart.items);
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  useEffect(() => {
+    let active = true;
+    getCart()
+      .then((cartItems) => {
+        if (active) dispatch(replaceCart(cartItems));
+      })
+      .catch((error) => {
+        if (active) setNotice(`Unable to sync cart: ${error.message}`);
+      });
+    return () => { active = false; };
+  }, [dispatch]);
+
+  const changeQuantity = async (item, quantity) => {
+    try {
+      if (quantity < 1) {
+        await removeProductFromCart(item.id);
+        dispatch(removeFromCart(item.id));
+      } else {
+        await updateCartQuantity(item.id, quantity);
+        if (quantity > item.quantity) dispatch(increaseQuantity(item.id));
+        else dispatch(decreaseQuantity(item.id));
+      }
+      setNotice('');
+    } catch (error) {
+      setNotice(`Unable to update cart: ${error.message}`);
+    }
+  };
+
+  const removeItem = async (productId) => {
+    try {
+      await removeProductFromCart(productId);
+      dispatch(removeFromCart(productId));
+      setNotice('');
+    } catch (error) {
+      setNotice(`Unable to remove product: ${error.message}`);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -13,6 +54,7 @@ function Cart() {
         <p className="text-gray-600">Review your items before checkout and keep shopping with confidence.</p>
       </div>
 
+      {notice && <p className="mb-4 text-sm text-red-600" role="alert">{notice}</p>}
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="mb-4 text-4xl">🛍️</div>
@@ -29,11 +71,11 @@ function Cart() {
                   <p className="text-blue-600">${item.price}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button type="button" aria-label={`Decrease quantity of ${item.title}`} onClick={() => dispatch(decreaseQuantity(item.id))} className="h-8 w-8 rounded border border-gray-300 bg-white">-</button>
+                  <button type="button" aria-label={`Decrease quantity of ${item.title}`} onClick={() => changeQuantity(item, item.quantity - 1)} className="h-8 w-8 rounded border border-gray-300 bg-white">-</button>
                   <span>{item.quantity}</span>
-                  <button type="button" aria-label={`Increase quantity of ${item.title}`} onClick={() => dispatch(increaseQuantity(item.id))} className="h-8 w-8 rounded border border-gray-300 bg-white">+</button>
+                  <button type="button" aria-label={`Increase quantity of ${item.title}`} onClick={() => changeQuantity(item, item.quantity + 1)} className="h-8 w-8 rounded border border-gray-300 bg-white">+</button>
                 </div>
-                <button type="button" onClick={() => dispatch(removeFromCart(item.id))} className="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">Remove</button>
+                <button type="button" onClick={() => removeItem(item.id)} className="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">Remove</button>
               </div>
             ))}
 

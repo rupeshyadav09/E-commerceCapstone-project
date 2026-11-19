@@ -15,13 +15,16 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [categories, setCategories] = useState([]);
+  const [categoriesError, setCategoriesError] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     // Load both page data sets once and remove the global listener when the page unmounts.
     dispatch(fetchProducts());
 
-    getCategories().then(setCategories).catch(() => setCategories([]));
+    getCategories()
+      .then(setCategories)
+      .catch((error) => setCategoriesError(error.message));
 
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 300);
@@ -41,6 +44,7 @@ function Home() {
           activeCategory={activeCategory}
           onChange={setActiveCategory}
         />
+        {categoriesError && <p className="mb-4 text-sm text-red-600" role="alert">Unable to load categories: {categoriesError}</p>}
 
         <div id="product-catalog" className="scroll-mt-6">
           {loading && (
