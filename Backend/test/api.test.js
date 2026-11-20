@@ -212,3 +212,51 @@ test("OpenAPI schema and Swagger UI are available", async () => {
     const swagger = await fetch(`${baseUrl}/api-docs/`);
     assert.equal(swagger.status, 200);
 });
+
+test("Vercel entrypoint exports the complete API without starting a local listener", async () => {
+    const app = require("../index");
+    const vercelServer = app.listen(0);
+    await new Promise((resolve) => vercelServer.once("listening", resolve));
+    const vercelUrl = `http://127.0.0.1:${vercelServer.address().port}`;
+
+    try {
+        const healthResponse = await fetch(`${vercelUrl}/`);
+        assert.equal(healthResponse.status, 200);
+        assert.equal((await healthResponse.json()).message, "ShopHub API is running.");
+
+        const specResponse = await fetch(`${vercelUrl}/openapi.json`);
+        assert.equal(specResponse.status, 200);
+        assert.ok((await specResponse.json()).paths["/products"]);
+    } finally {
+        await new Promise((resolve, reject) => {
+            vercelServer.close((error) => error ? reject(error) : resolve());
+        });
+    }
+});
+
+test("database connection is awaited only for cart and favorite routes", async () => {
+    let connectionCount = 0;
+    const app = createApp({
+        CartItem,
+        Favorite,
+        connectDatabase: async () => {
+            connectionCount += 1;
+        },
+    });
+    const databaseServer = app.listen(0);
+    await new Promise((resolve) => databaseServer.once("listening", resolve));
+    const databaseUrl = `http://127.0.0.1:${databaseServer.address().port}`;
+
+    try {
+        await fetch(`${databaseUrl}/`);
+        assert.equal(connectionCount, 0);
+
+        const cartResponse = await fetch(`${databaseUrl}/cart`);
+        assert.equal(cartResponse.status, 200);
+        assert.equal(connectionCount, 1);
+    } finally {
+        await new Promise((resolve, reject) => {
+            databaseServer.close((error) => error ? reject(error) : resolve());
+        });
+    }
+});

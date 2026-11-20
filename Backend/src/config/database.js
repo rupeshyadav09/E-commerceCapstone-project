@@ -1,6 +1,8 @@
 
 const mongoose = require("mongoose");
 
+let connectionPromise;
+
 async function connectDatabase() {
     const { MONGODB_URI } = process.env;
 
@@ -12,12 +14,21 @@ async function connectDatabase() {
         return;
     }
 
-    await mongoose.connect(MONGODB_URI, {
+    if (mongoose.connection.readyState === 2 && connectionPromise) {
+        return connectionPromise;
+    }
+
+    connectionPromise = mongoose.connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 10000,
         connectTimeoutMS: 10000,
+    }).then(() => {
+        console.info("Connected to MongoDB.");
+    }).catch((error) => {
+        connectionPromise = undefined;
+        throw error;
     });
 
-    console.info("Connected to MongoDB.");
+    return connectionPromise;
 }
 
 module.exports = connectDatabase;

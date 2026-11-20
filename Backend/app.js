@@ -31,6 +31,13 @@ function createApp(options = {}) {
     });
     app.get("/openapi.json", (req, res) => res.json(openApiDocument));
     app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
+
+    if (options.connectDatabase) {
+        app.use(["/cart", "/api/cart", "/favorites", "/api/favorites"], (req, res, next) => {
+            options.connectDatabase().then(() => next(), next);
+        });
+    }
+
     app.use("/", apiRoutes(options));
 
     app.use((req, res) => {

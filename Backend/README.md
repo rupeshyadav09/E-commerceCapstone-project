@@ -5,7 +5,7 @@ Express API for the ShopHub storefront. The product catalogue is read from Fake 
 ## Architecture
 
 ```text
-index.js                 Loads environment, connects MongoDB, starts/shuts down HTTP server
+index.js                 Exports the Express app for Vercel; starts HTTP server when run directly
 app.js                   Configures Express, CORS, routes, Swagger and middleware
 src/
   config/database.js     MongoDB connection
@@ -25,7 +25,7 @@ test/                     HTTP/API tests with in-memory model doubles
 3. From `Backend/`, run `npm ci`, then `npm run dev`.
 4. Configure the frontend's `VITE_API_BASE_URL` as `http://localhost:8080` (or omit it to use that default).
 
-The server does not listen until its MongoDB connection succeeds. `PORT` defaults to `8080`. `CORS_ORIGIN` is a comma-separated allowlist; when omitted, all origins are allowed for local development. Set the exact deployed frontend origin(s) in production.
+When run locally or on Render, the server does not listen until its MongoDB connection succeeds. On Vercel, the exported Express app connects to MongoDB when a cart or favorites route is requested; product and health routes do not need MongoDB. `PORT` defaults to `8080`. `CORS_ORIGIN` is a comma-separated allowlist; when omitted, all origins are allowed for local development. Set the exact deployed frontend origin(s) in production.
 
 ## API
 
@@ -54,6 +54,19 @@ Product inputs are allow-listed and validated (id, title, price, category, image
 Run `npm test` from `Backend/`. The tests cover the HTTP routes, catalogue responses, cart/favorite writes, invalid input, and Swagger/OpenAPI availability without requiring MongoDB or network access. Runtime logs include each method, path, status, and duration; application and startup failures are logged separately.
 
 ## Deploy
+
+### Vercel
+
+Deploy the backend and frontend as separate Vercel projects from the same Git repository:
+
+1. For the backend project, set the Root Directory to `Backend`. Vercel detects the Express app exported from `index.js`.
+2. Set `MONGODB_URI` to the Atlas connection string and `CORS_ORIGIN` to the exact deployed frontend origin. `PRODUCTS_API_URL` is optional.
+3. Deploy and verify `/`, `/products`, and `/api-docs/` on the backend domain.
+4. For the frontend project, set the Root Directory to `Frontend`, Framework Preset to Vite, build command to `npm run build`, and output directory to `dist`.
+5. Set the frontend's `VITE_API_BASE_URL` to the backend Vercel domain, then redeploy the frontend.
+6. Ensure MongoDB Atlas Network Access allows connections from the backend's outbound network.
+
+### Render
 
 `render.yaml` defines a Render web service and enables automatic deploys from the connected Git repository. In Render:
 
