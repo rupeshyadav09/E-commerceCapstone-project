@@ -1,40 +1,13 @@
-require("dotenv").config();
 
-const mongoose = require("mongoose");
-const createApp = require("./app");
-const connectDatabase = require("./src/config/database");
+const express = require("express");
 
-const port = Number(process.env.PORT) || 8080;
+const app = express();
 
-async function startServer() {
-    console.info("[startup] Backend started");
-    console.info("[startup] MONGODB_URI exists:", Boolean(process.env.MONGODB_URI));
-    console.info("[startup] Connecting to MongoDB...");
-
-    await connectDatabase();
-
-    console.info("[startup] MongoDB connected; starting server");
-
-    const server = createApp().listen(port, () => {
-        console.info(`ShopHub API listening on port ${port}`);
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Vercel Express API is working!"
     });
-
-    const shutdown = async (signal) => {
-        console.info(`${signal} received; closing ShopHub API.`);
-        server.close(async (error) => {
-            if (error) {
-                console.error("Failed to close the HTTP server cleanly.", error);
-                process.exitCode = 1;
-            }
-            await mongoose.disconnect();
-        });
-    };
-
-    process.once("SIGINT", () => shutdown("SIGINT"));
-    process.once("SIGTERM", () => shutdown("SIGTERM"));
-}
-
-startServer().catch((error) => {
-    console.error("ShopHub API failed to start.", error);
-    process.exitCode = 1;
 });
+
+module.exports = app;
