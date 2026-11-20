@@ -7,7 +7,13 @@ const connectDatabase = require("./src/config/database");
 const port = Number(process.env.PORT) || 8080;
 
 async function startServer() {
+    console.info("[startup] Backend started");
+    console.info("[startup] MONGODB_URI exists:", Boolean(process.env.MONGODB_URI));
+    console.info("[startup] Connecting to MongoDB...");
+
     await connectDatabase();
+
+    console.info("[startup] MongoDB connected; starting server");
 
     const server = createApp().listen(port, () => {
         console.info(`ShopHub API listening on port ${port}`);
