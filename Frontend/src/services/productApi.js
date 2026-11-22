@@ -1,4 +1,7 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL
+  || (import.meta.env.DEV ? 'http://localhost:8080' : '')
+).replace(/\/$/, '');
 const USER_ID_KEY = 'shopHubUserId';
 
 function getUserId() {
@@ -11,6 +14,10 @@ function getUserId() {
 }
 
 async function requestJson(path, options = {}) {
+  if (!API_BASE_URL) {
+    throw new Error('Set VITE_API_BASE_URL to the deployed backend URL before building the frontend.');
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: { 'X-User-Id': getUserId(), ...options.headers },

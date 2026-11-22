@@ -6,16 +6,32 @@ const openApiDocument = require("./src/docs/openapi");
 const requestLogger = require("./src/middleware/requestLogger");
 const errorHandler = require("./src/middleware/errorHandler");
 
+function isLocalOrigin(origin) {
+    try {
+        const { hostname, protocol } = new URL(origin);
+        return protocol === "http:"
+            && ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
+    } catch {
+        return false;
+    }
+}
+
 function createApp(options = {}) {
     const app = express();
     const allowedOrigins = (process.env.CORS_ORIGIN || "")
         .split(",")
         .map((origin) => origin.trim())
         .filter(Boolean);
+    const allowsLocalOrigins = allowedOrigins.some(isLocalOrigin);
 
     app.use(cors({
         origin(origin, callback) {
-            if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            if (
+                !origin
+                || allowedOrigins.length === 0
+                || allowedOrigins.includes(origin)
+                || (allowsLocalOrigins && isLocalOrigin(origin))
+            ) {
                 return callback(null, true);
             }
             const error = new Error("Origin is not allowed by CORS");

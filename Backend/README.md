@@ -20,12 +20,12 @@ test/                     HTTP/API tests with in-memory model doubles
 
 ## Run locally
 
-1. Use Node.js 20 or newer and MongoDB Atlas or a local MongoDB instance.
+1. Use Node.js 22.x and MongoDB Atlas or a local MongoDB instance.
 2. Copy `.env.example` to `.env`, then set `MONGODB_URI` to your own database connection string. Never commit `.env`.
 3. From `Backend/`, run `npm ci`, then `npm run dev`.
 4. Configure the frontend's `VITE_API_BASE_URL` as `http://localhost:8080` (or omit it to use that default).
 
-When run locally or on Render, the server does not listen until its MongoDB connection succeeds. On Vercel, the exported Express app connects to MongoDB when a cart or favorites route is requested; product and health routes do not need MongoDB. `PORT` defaults to `8080`. `CORS_ORIGIN` is a comma-separated allowlist; when omitted, all origins are allowed for local development. Set the exact deployed frontend origin(s) in production.
+When run locally or on Render, the server does not listen until its MongoDB connection succeeds. On Vercel, the exported Express app connects to MongoDB when a cart or favorites route is requested; product and health routes do not need MongoDB. `PORT` defaults to `8080`. `CORS_ORIGIN` is a comma-separated allowlist; when omitted, all origins are allowed for local development. If a loopback origin is configured, other local loopback URLs (such as `127.0.0.1` or Vite's alternate port) are also accepted. Set the exact deployed frontend origin(s) in production.
 
 ## API
 

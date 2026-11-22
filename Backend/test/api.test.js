@@ -112,6 +112,39 @@ test("catalogue endpoints return product and category arrays", async () => {
     assert.deepEqual(await categoriesResponse.json(), ["electronics"]);
 });
 
+test("CORS accepts local loopback aliases without allowing unrelated origins", async () => {
+    const previousCorsOrigin = process.env.CORS_ORIGIN;
+    process.env.CORS_ORIGIN = "http://localhost:5173";
+    const corsApp = createApp();
+    if (previousCorsOrigin === undefined) {
+        delete process.env.CORS_ORIGIN;
+    } else {
+        process.env.CORS_ORIGIN = previousCorsOrigin;
+    }
+
+    const corsServer = corsApp.listen(0);
+    await new Promise((resolve) => corsServer.once("listening", resolve));
+    const corsUrl = `http://127.0.0.1:${corsServer.address().port}`;
+
+    try {
+        for (const origin of ["http://localhost:5174", "http://127.0.0.1:5174"]) {
+            const localResponse = await fetch(corsUrl, { headers: { Origin: origin } });
+            assert.equal(localResponse.status, 200);
+            assert.equal(localResponse.headers.get("access-control-allow-origin"), origin);
+        }
+
+        const externalResponse = await fetch(corsUrl, {
+            headers: { Origin: "https://shop.example" },
+        });
+        assert.equal(externalResponse.status, 403);
+        assert.equal(externalResponse.headers.get("access-control-allow-origin"), null);
+    } finally {
+        await new Promise((resolve, reject) => {
+            corsServer.close((error) => error ? reject(error) : resolve());
+        });
+    }
+});
+
 test("cart persists products per user, increments quantity, and supports removal", async () => {
     const first = await fetch(`${baseUrl}/api/cart`, {
         method: "POST",
