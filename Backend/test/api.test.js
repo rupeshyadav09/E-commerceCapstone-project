@@ -112,6 +112,37 @@ test("catalogue endpoints return product and category arrays", async () => {
     assert.deepEqual(await categoriesResponse.json(), ["electronics"]);
 });
 
+test("catalogue failures preserve the provider error in server logs", async () => {
+    const app = createApp({
+        fetchImpl: async () => {
+            throw new Error("Catalogue provider connection failed.");
+        },
+    });
+    const failureServer = app.listen(0);
+    await new Promise((resolve) => failureServer.once("listening", resolve));
+    const failureUrl = `http://127.0.0.1:${failureServer.address().port}`;
+    const loggedErrors = [];
+    const previousConsoleError = console.error;
+    console.error = (...args) => loggedErrors.push(args);
+
+    try {
+        for (const path of ["/products", "/products/categories"]) {
+            const response = await fetch(`${failureUrl}${path}`);
+            assert.equal(response.status, 502);
+            assert.equal((await response.json()).message, "An unexpected server error occurred.");
+        }
+        assert.equal(
+            loggedErrors.filter(([, error]) => error.message === "Catalogue provider connection failed.").length,
+            2,
+        );
+    } finally {
+        console.error = previousConsoleError;
+        await new Promise((resolve, reject) => {
+            failureServer.close((error) => error ? reject(error) : resolve());
+        });
+    }
+});
+
 test("CORS accepts local loopback aliases without allowing unrelated origins", async () => {
     const previousCorsOrigin = process.env.CORS_ORIGIN;
     process.env.CORS_ORIGIN = "http://localhost:5173";

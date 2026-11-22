@@ -8,7 +8,6 @@ function createProductController(fetchImpl) {
                 return res.json(products);
             } catch (error) {
                 error.status = 502;
-                error.message = "Product catalogue is unavailable. Please try again later.";
                 return next(error);
             }
         },
@@ -18,7 +17,6 @@ function createProductController(fetchImpl) {
                 return res.json(await productService.getCategories(fetchImpl));
             } catch (error) {
                 error.status = 502;
-                error.message = "Product categories are unavailable. Please try again later.";
                 return next(error);
             }
         },
