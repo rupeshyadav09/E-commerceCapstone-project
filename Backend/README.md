@@ -1,6 +1,6 @@
 # ShopHub backend
 
-Express API for the ShopHub storefront. The product catalogue is read from Fake Store API; cart and favorites are stored in MongoDB as validated product snapshots, so saved items remain available if the catalogue provider changes.
+Express API for the ShopHub storefront. The product catalogue is read from DummyJSON and normalized to the storefront product shape; cart and favorites are stored in MongoDB as validated product snapshots.
 
 ## Architecture
 
@@ -60,7 +60,7 @@ Run `npm test` from `Backend/`. The tests cover the HTTP routes, catalogue respo
 Deploy the backend and frontend as separate Vercel projects from the same Git repository:
 
 1. For the backend project, set the Root Directory to `Backend`. Vercel detects the Express app exported from `index.js`.
-2. Set `MONGODB_URI` to the Atlas connection string and `CORS_ORIGIN` to the exact deployed frontend origin. `PRODUCTS_API_URL` is optional.
+2. Set `MONGODB_URI` to the Atlas connection string and `CORS_ORIGIN` to the exact deployed frontend origin. `PRODUCTS_API_URL` is optional; the default is `https://dummyjson.com/products`.
 3. Deploy and verify `/`, `/products`, and `/api-docs/` on the backend domain.
 4. For the frontend project, set the Root Directory to `Frontend`, Framework Preset to Vite, build command to `npm run build`, and output directory to `dist`.
 5. Set the frontend's `VITE_API_BASE_URL` to the backend Vercel domain, then redeploy the frontend.

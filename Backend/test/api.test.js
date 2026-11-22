@@ -85,7 +85,7 @@ before(async () => {
         Favorite,
         fetchImpl: async (url) => ({
             ok: true,
-            json: async () => (url.endsWith("/categories")
+            json: async () => (String(url).endsWith("/category-list")
                 ? ["electronics"]
                 : [{ ...product, id: 21 }]),
         }),
@@ -110,6 +110,47 @@ test("catalogue endpoints return product and category arrays", async () => {
 
     const categoriesResponse = await fetch(`${baseUrl}/products/categories`);
     assert.deepEqual(await categoriesResponse.json(), ["electronics"]);
+});
+
+test("DummyJSON catalogue responses are normalized for the storefront", async () => {
+    const app = createApp({
+        fetchImpl: async (url) => ({
+            ok: true,
+            json: async () => (String(url).endsWith("/category-list")
+                ? ["beauty"]
+                : {
+                    products: [{
+                        id: 45,
+                        title: "Test mascara",
+                        price: 9.99,
+                        description: "Test description",
+                        category: "beauty",
+                        rating: 4.2,
+                        reviews: [{}, {}],
+                        thumbnail: "https://example.com/mascara.png",
+                    }],
+                }),
+        }),
+    });
+    const providerServer = app.listen(0);
+    await new Promise((resolve) => providerServer.once("listening", resolve));
+    const providerUrl = `http://127.0.0.1:${providerServer.address().port}`;
+
+    try {
+        const productsResponse = await fetch(`${providerUrl}/products`);
+        const products = await productsResponse.json();
+        assert.equal(productsResponse.status, 200);
+        assert.equal(products[0].image, "https://example.com/mascara.png");
+        assert.deepEqual(products[0].rating, { rate: 4.2, count: 2 });
+        assert.match(products[0].id.toString(), /^45$/);
+
+        const categoriesResponse = await fetch(`${providerUrl}/products/categories`);
+        assert.deepEqual(await categoriesResponse.json(), ["beauty"]);
+    } finally {
+        await new Promise((resolve, reject) => {
+            providerServer.close((error) => error ? reject(error) : resolve());
+        });
+    }
 });
 
 test("catalogue failures preserve the provider error in server logs", async () => {

@@ -1,6 +1,6 @@
 # ShopHub
 
-ShopHub is a React/Vite storefront with an Express API. The API reads the product catalogue from Fake Store API and stores cart and favorite snapshots in MongoDB.
+ShopHub is a React/Vite storefront with an Express API. The API reads and normalizes the product catalogue from DummyJSON and stores cart and favorite snapshots in MongoDB.
 
 ## Repository layout
 
@@ -49,7 +49,7 @@ Set these Render environment variables:
 
 - `MONGODB_URI` — your Atlas connection string; keep it private.
 - `CORS_ORIGIN` — the exact deployed frontend origin, such as `https://your-store.vercel.app` (no trailing slash).
-- `PRODUCTS_API_URL` is optional; the default is `https://fakestoreapi.com/products`.
+- `PRODUCTS_API_URL` is optional; the default is `https://dummyjson.com/products`.
 
 The service needs a reachable MongoDB database to start. For Atlas, create a database user and allow the Render service to connect in Atlas Network Access. Use a strong password and never commit `.env` or database credentials.
 
